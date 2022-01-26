@@ -94,6 +94,8 @@ func ParseArgs(config *configuration.GatewayConfig) error {
 	configFile := flag.String("ConfigFile", "", "Path of the gateway configuration JSON file.")
 	flag.BoolVar(&config.EnableGNMIServer, "EnableGNMIServer", false, "Enable the gNMI server")
 	exporters := flag.String("Exporters", "", "Comma-separated list of Exporters to enable.")
+	flag.StringVar(&config.Exporters.DatadogTarget, "ExportersDatadogTarget", "localhost:1000", "Datadog target URL (default is localhost:1000")
+	flag.StringVar(&config.Exporters.DatadogPrefix, "ExportersDatadogPrefix", "", "Datadog prefix (default is None")
 	flag.Int64Var(&config.Exporters.KafkaBatchBytes, "ExporterKafkaBatchBytes", 1048576, "Max bytes that will be buffered before flushing messages to a Kafka partition")
 	flag.IntVar(&config.Exporters.KafkaBatchSize, "ExporterKafkaBatchSize", 10000, "Max number of messages that will be buffered before flushing messages to a Kafka partition")
 	flag.DurationVar(&config.Exporters.KafkaBatchTimeout, "ExporterKafkaBatchTimeout", 1*time.Second, "Max seconds between flushing messages to a Kafka partition")

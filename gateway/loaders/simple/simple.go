@@ -63,7 +63,7 @@ type TargetConfig struct {
 
 type ConnectionConfig struct {
 	Addresses   []string          `yaml:"addresses"`
-	Request     string            `yaml:"request"`
+	Requests    []string          `yaml:"requests"`
 	Meta        map[string]string `yaml:"meta"`
 	Credentials CredentialsConfig `yaml:"credentials"`
 }
@@ -157,14 +157,16 @@ func (m *SimpleTargetLoader) yamlToTargets(data *[]byte) (*targetpb.Configuratio
 	}
 
 	for connName, conn := range simpleConfig.Connection {
-		configs.Target[connName] = &targetpb.Target{
-			Addresses: conn.Addresses,
-			Request:   conn.Request,
-			Meta:      conn.Meta,
-			Credentials: &targetpb.Credentials{
-				Username: conn.Credentials.Username,
-				Password: conn.Credentials.Password,
-			},
+		for _, Requested := range conn.Requests {
+			configs.Target[connName+"_"+Requested] = &targetpb.Target{
+				Addresses: conn.Addresses,
+				Request:   Requested,
+				Meta:      conn.Meta,
+				Credentials: &targetpb.Credentials{
+					Username: conn.Credentials.Username,
+					Password: conn.Credentials.Password,
+				},
+			}
 		}
 	}
 	return configs, nil
