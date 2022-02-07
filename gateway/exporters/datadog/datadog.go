@@ -2,6 +2,7 @@ package datadog
 
 import (
 	"math"
+	"strconv"
 	"strings"
 
 	dogstats "github.com/DataDog/datadog-go/v5/statsd"
@@ -40,16 +41,21 @@ func (e *DatadogExporter) Name() string {
 
 func (e *DatadogExporter) Export(leaf *ctree.Leaf) {
 	notification := leaf.Value().(*gnmipb.Notification)
-
 	for _, update := range notification.Update {
 
 		value, isNumber := utils.GetNumberValues(update.Val)
 
 		if !isNumber {
 			if update.Val.GetDecimalVal() == nil {
-				continue
+				jsonValue, isJson := strconv.ParseFloat(string(update.Val.GetJsonVal()), 64)
+				if isJson != nil {
+					continue
+				} else {
+					value = jsonValue
+				}
+			} else {
+				value = Round(update.Val)
 			}
-			value = Round(update.Val)
 		}
 		metric, tags := UpdateToMetricNameAndTags(notification.GetPrefix(), update)
 		e.client.Gauge(e.config.Exporters.DatadogPrefix+metric, float64(value), tags, 1)
@@ -77,21 +83,32 @@ func UpdateToMetricNameAndTags(prefix *gnmipb.Path, update *gnmipb.Update) (stri
 			tags = append(tags, "host:"+strings.Split(target, "_")[0])
 		}
 	}
-
+	for _, prefixElem := range prefix.Elem {
+		if metricName == "" {
+			metricName = prefixElem.Name
+		} else {
+			metricName = metricName + "." + prefixElem.Name
+		}
+		for key, value := range prefixElem.Key {
+			tagKey := prefixElem.Name + "_" + strings.ReplaceAll(key, "-", ".")
+			value = strings.ReplaceAll(value, " ", "_")
+			tags = append(tags, tagKey+":"+value)
+		}
+	}
 	for _, elem := range update.Path.Elem {
 		if metricName == "" {
 			metricName = elem.Name
 		} else {
 			metricName = metricName + "." + elem.Name
 		}
-
 		for key, value := range elem.Key {
-			tagKey := metricName + "_" + strings.ReplaceAll(key, "-", ".")
+			tagKey := elem.Name + "_" + strings.ReplaceAll(key, "-", ".")
 			value = strings.ReplaceAll(value, " ", "_")
 			tags = append(tags, tagKey+":"+value)
 		}
 	}
-	return metricName, tags
+
+	return strings.ReplaceAll(metricName, "-", "_"), tags
 }
 
 func Round(dec *gnmipb.TypedValue) float64 {
