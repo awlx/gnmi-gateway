@@ -140,6 +140,10 @@ type ExportersConfig struct {
 	// InfluxDBBatchSize the number of lines or individual data points in a
 	// line protocol batch.
 	InfluxDBBatchSize uint `json:"influxdb_batch_size"`
+	// DatadogTarget is the host:port for Datadog Statsd
+	DatadogTarget string `json:"datadog_target"`
+	// DatadogPrefix is the prefix added to metrics
+	DatadogPrefix string `json:"datadog_prefix"`
 }
 
 type TargetLoadersConfig struct {
